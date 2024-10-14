@@ -12,43 +12,27 @@ pip install pyshare-lib
 
 ```python
 from pyshare import Share
-import pandas as pd
 
+# create a share
 share = Share("apples")
 
 # save your data
+import pandas as pd
+
 df = pd.DataFrame({"tree_id": ["alice", "bob"], "bud_percentage": [42.1, 39.3]})
 df.attrs = {"flavor": "sweet/sharp", "country": "The Netherlands"}
 share["elstar"] = df
 
-# load your data
-df = share["elstar"]
-df = share.get(flavor="sweet/sharp")
-```
-
-## Configuration
-
-Each share creates a DuckDB database, either on your local machine or on MotherDuck. By default, your shares are saved under `~/.pyshare/data`.
-
-To override where local files are stored, set the environment variable `PYSHARE_PATH`.
-
-To use MotherDuck, export your MotherDuck [token](https://app.motherduck.com/token-request?appName=pyshare) to an environment variable `MOTHERDUCK_TOKEN`.
-
-## Fetching and updating data
-
-```python
-# another example
 df = pd.DataFrame({"tree_id": ["charlie", "dora"], "bud_percentage": [93.1, 87.3]})
 df.attrs = {"flavor": "tart", "country": "Australia"}
 share["granny smith"] = df
-```
 
-To inspect your share and display an overview of all dataframes and attributes, run
-```
+# load your data
+df = share["elstar"]
+df = share.get(flavor="sweet/sharp")
+
 share
 ```
-
-which returns:
 
 ```bash
 Share(name=apples)
@@ -61,10 +45,16 @@ Share(name=apples)
 └──────────────┴──────────────┴────────────────┴─────────────┴─────────────────┘
 ```
 
-To get a dataframe version of your share, run
-```
-share.df()
-```
+
+## Configuration
+
+Each share creates a DuckDB database, either on your local machine or on MotherDuck. By default, your shares are saved under `~/.pyshare/data`.
+
+To override where local files are stored, set the environment variable `PYSHARE_PATH`.
+
+To use MotherDuck, export your MotherDuck [token](https://app.motherduck.com/token-request?appName=pyshare) to an environment variable `MOTHERDUCK_TOKEN`.
+
+## Fetching and updating data
 
 You can easily find your dataframes by `name` or any of the attributes you specified:
 
