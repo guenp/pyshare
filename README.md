@@ -22,19 +22,35 @@ df.attrs = {"flavor": "tart", "country": "Australia"}
 share["granny smith"] = df
 ```
 
-To inspect your share, run
+To inspect your share and display an overview of all dataframes and attributes, run
 ```
 share
 ```
 
-You can update your dataframe like so, without updating the attributes:
+which returns:
+
+```bash
+Share(name=apples)
+┌──────────────┬──────────────┬────────────────┬─────────────┬─────────────────┐
+│     name     │ column_count │ estimated_size │   flavor    │     country     │
+│   varchar    │    int64     │     int64      │   varchar   │     varchar     │
+├──────────────┼──────────────┼────────────────┼─────────────┼─────────────────┤
+│ elstar       │            4 │              2 │ sweet/sharp │ The Netherlands │
+│ granny smith │            4 │              2 │ tart        │ Australia       │
+└──────────────┴──────────────┴────────────────┴─────────────┴─────────────────┘
+```
+
+
+You can update your dataframe like so, which won't update the attributes unless you specify `df.attrs`:
 
 ```python
 df = pd.DataFrame({"tree_id": [1, 2, 3], "size": [2.4, 1.2, 0.8], "num_apples": [234, 123, 40], "harvest": ["plentiful", "sparse", "baby"]})
+# uncomment this to overwrite the attributes
+# df.attrs = {"parentage": ["Ingrid Marie", "Golden Delicious"]}
 share["elstar"] = df
 ```
 
-To overwrite or update the attributes but not the table, run:
+To overwrite or update the attributes without updating the table, run:
 
 ```python
 # overwrite
@@ -54,10 +70,13 @@ df = share.get(country="The Netherlands")
 # this will get you the granny smith table
 df = share.get(country="Australia")
 
-# get just the attributes for the elstar dataframe
-share["elstar"].attrs
+# get all matches for a field
+share.attrs["elstar"]["tree"] = "large"
+share.attrs["granny smith"]["tree"] = "large"
+for df in share.get_all(tree="large"):
+    print(df.attrs)
 
-# get a table of all attributes
+# get a dataframe of all attributes
 share.df()
 ```
 
