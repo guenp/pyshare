@@ -50,28 +50,6 @@ class _ShareAttrs:
         if res is not None:
             return json.loads(res[0])
 
-    def df(self) -> DataFrame:
-        res = self._con.sql(
-            """
-            select json_group_structure(values) from _pyshare.attrs
-        """
-        ).fetchone()
-
-        if res is not None:
-            json_structure = res[0]
-
-            return self._con.sql(
-                f"""
-            with attrs_ as (
-                select
-                    name,
-                    json_transform(values, '{json_structure}') as values
-                    from _pyshare.attrs
-            )
-            select name, values.* from attrs_
-            """
-            ).df()
-
 
 class Share:
     def __init__(self, name: str, path: str):
@@ -95,7 +73,7 @@ class Share:
         self._con.sql(f"""CREATE TABLE "{name}" AS (SELECT * FROM data)""")
         if data.attrs is not None:
             if NAME_ATTR in data.attrs and data.attrs[NAME_ATTR] != name:
-                warn(f"Ignoring 'name' attribute in attrs: DataFrame name is set to {name}")
+                warn(f"Ignoring 'name' attribute in attrs: DataFrame name is already set to {name}")
             self._attrs.set(name=name, attrs=data.attrs)
 
     def get_all(self, **kwargs) -> Generator[DataFrame, Any, None]:
@@ -125,39 +103,43 @@ class Share:
         self.set(data=data, name=name)
 
     def show(self):
-        res = self._con.sql(
-            """
-            select json_group_structure(values) from _pyshare.attrs
-        """
-        ).fetchone()
-        if res is not None:
+        res = self._con.sql("SELECT json_group_structure(values) FROM _pyshare.attrs").fetchone()
+        if res is not None and res[0] is not None:
             json_structure = res[0]
             query = f"""
-            with attrs_ as (
-                select
+            WITH attrs_ AS (
+                SELECT
                     name,
-                    json_transform(values, '{json_structure}') as values
-                    from _pyshare.attrs
+                    json_transform(values, '{json_structure}') AS values
+                    FROM _pyshare.attrs
             ),
-            tables as (
-                select
+            tables AS (
+                SELECT
                     table_name,
                     column_count,
-                    estimated_size from duckdb_tables()
-                    where schema_name = 'main'
+                    estimated_size
+                    FROM duckdb_tables()
+                    WHERE schema_name = 'main'
             )
-            select table_name as name, column_count, estimated_size, values.*
-            from tables join attrs_ on table_name = name
+            SELECT table_name AS name, column_count, estimated_size, values.*
+            FROM tables JOIN attrs_ ON table_name = name
             """
             return self._con.sql(query)
 
     def df(self) -> DataFrame:
-        df = self.show().df()
-        df.attrs[NAME_ATTR] = self.name
-        return df
+        show = self.show()
+        if show is not None:
+            df = show.df()
+            df.attrs[NAME_ATTR] = self.name
+            return df
+        return DataFrame()
 
     def __repr__(self) -> str:
-        return f"Share(name={self.name})\n" + self.show().__repr__()
+        share_repr = f"Share(name={self.name})"
+        share_overview = self.show()
+        if share_overview is not None:
+            return f"{share_repr}\n" + share_overview.__repr__()
+        return share_repr
 
 
 def create_share(name: str, path: str | None = None) -> Share:

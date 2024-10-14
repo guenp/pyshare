@@ -24,7 +24,7 @@ def df_elstar(test_data_path):
 
 @pytest.fixture()
 def attrs_elstar():
-    return {"flavor": "sweet/sharp", "country": "The Netherlands"}
+    return {"name": "elstar", "flavor": "sweet/sharp", "country": "The Netherlands"}
 
 
 @pytest.fixture()
@@ -34,7 +34,7 @@ def df_granny_smith(test_data_path):
 
 @pytest.fixture()
 def attrs_granny_smith():
-    return {"flavor": "tart", "country": "Australia"}
+    return {"name": "granny smith", "flavor": "tart", "country": "Australia"}
 
 
 def test_share(df_elstar: pd.DataFrame, path: str):
