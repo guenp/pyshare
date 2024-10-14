@@ -16,7 +16,23 @@ df = pd.DataFrame({"tree_id": ["alice", "bob"], "age": ["young", "old"]})
 df.attrs = {"flavor": "sweet/sharp", "country": "The Netherlands"}
 # add the dataframe to your share
 share["elstar"] = df
+# get your data
+df = share["elstar"]
+# find your dataframe by one or more attribute values
+df = share.get(flavor="sweet/sharp")
+```
 
+## Configuration
+
+Each share creates a DuckDB database, either on your local machine or on MotherDuck. By default, your shares are saved under `~/.pyshare/data`.
+
+To override where local files are stored, set the environment variable `PYSHARE_PATH`.
+
+To use MotherDuck, export your MotherDuck [token](https://app.motherduck.com/token-request?appName=pyshare) to an environment variable `MOTHERDUCK_TOKEN`.
+
+## Fetching and updating data
+
+```python
 # another example
 df = pd.DataFrame({"tree_id": ["charlie", "dora"], "bud_percentage": [93.1, 87.3]})
 df.attrs = {"flavor": "tart", "country": "Australia"}
@@ -40,14 +56,6 @@ Share(name=apples)
 │ granny smith │            2 │              2 │ tart        │ Australia       │
 └──────────────┴──────────────┴────────────────┴─────────────┴─────────────────┘
 ```
-
-## Configuration
-
-Each share creates a DuckDB database, either on your local machine or on MotherDuck.
-By default, your shares are saved under `~/.pyshare/data`. To override, set the environment variable `PYSHARE_PATH`.
-To use MotherDuck, export your MotherDuck [token](https://app.motherduck.com/token-request?appName=pyshare) to an environment variable `MOTHERDUCK_TOKEN`.
-
-## Fetching and updating data
 
 To get a dataframe version of your share, run
 ```
