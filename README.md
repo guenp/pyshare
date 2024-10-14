@@ -11,7 +11,7 @@ import pandas as pd
 share = create_share("apples")
 
 # create a dataframe
-df = pd.DataFrame({"tree_id": ["alice", "bob"], "age": ["young", "old"]})
+df = pd.DataFrame({"tree_id": ["alice", "bob"], "bud_percentage": [42.1, 39.3]})
 # add attributes to make it easier to find the dataframe later
 df.attrs = {"flavor": "sweet/sharp", "country": "The Netherlands"}
 # add the dataframe to your share
