@@ -129,8 +129,7 @@ class Share:
         return self.get(name=key)
 
     def set(self, name: str, data: DataFrame):
-        if data:
-            self._con.sql(f"""CREATE OR REPLACE TABLE "{name}" AS (SELECT * FROM data)""")
+        self._con.sql(f"""CREATE OR REPLACE TABLE "{name}" AS (SELECT * FROM data)""")
         if data.attrs:
             attrs_to_set = data.attrs.copy()
             if NAME_ATTR in data.attrs:
