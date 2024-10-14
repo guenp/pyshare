@@ -5,20 +5,18 @@ This is a library for easy sharing of Python DataFrame objects. It's powered by 
 ## Example usage
 
 ```python
-from pyshare import create_share
+from pyshare import Share
 import pandas as pd
 
-share = create_share("apples")
+share = Share("apples")
 
-# create a dataframe
+# save your data
 df = pd.DataFrame({"tree_id": ["alice", "bob"], "bud_percentage": [42.1, 39.3]})
-# add attributes to make it easier to find the dataframe later
 df.attrs = {"flavor": "sweet/sharp", "country": "The Netherlands"}
-# add the dataframe to your share
 share["elstar"] = df
-# get your data
+
+# load your data
 df = share["elstar"]
-# find your dataframe by one or more attribute values
 df = share.get(flavor="sweet/sharp")
 ```
 
