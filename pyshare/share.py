@@ -25,6 +25,10 @@ def is_motherduck(path: str | Path | None = None):
     return MD in str(path)
 
 
+def is_share(path: str):
+    return "md:_share" in path
+
+
 def get_path(name: str):
     if PYSHARE_PATH in os.environ:
         return Path(os.path.expanduser(os.environ[PYSHARE_PATH])) / f"{name}.db"
@@ -142,17 +146,27 @@ class Share:
             self.path.parent.mkdir(parents=True, exist_ok=True)
         elif is_motherduck(path):
             with duckdb.connect(MD) as con:
-                con.sql(f"CREATE DATABASE IF NOT EXISTS {self.name}")
-                try:
-                    con.sql(f"""
-                        CREATE SHARE IF NOT EXISTS {self.name}
-                        FROM {self.name} (ACCESS ORGANIZATION , VISIBILITY DISCOVERABLE);
-                    """)
-                except duckdb.CatalogException:
-                    warn("Skipping creating share")
-                    pass
+                if is_share(path):
+                    con.sql(f"ATTACH '{path}'")
+                else:
+                    con.sql(f"CREATE DATABASE IF NOT EXISTS {self.name}")
+                    try:
+                        res = con.sql(f"""
+                            CREATE SHARE IF NOT EXISTS {self.name}
+                            FROM {self.name} (ACCESS ORGANIZATION , VISIBILITY DISCOVERABLE);
+                        """)
+                        self.share_url = res.fetchone()[0]
+                    except duckdb.CatalogException:
+                        warn("Skipping creating share")
+                        pass
         self._con = duckdb.connect(database=path)
         self._attrs = _ShareAttrs(con=self._con)
+    
+    def __del__(self):
+        self._con.close()
+        if is_share(self.path):
+            with duckdb.connect(MD) as con:
+                con.sql(f"DETACH {self.name}")
 
     def __setitem__(self, key: str, value: DataFrame):
         self.set(name=key, data=value)
@@ -256,7 +270,11 @@ class Share:
         return DataFrame()
 
     def __repr__(self) -> str:
-        share_repr = f"Share(name={self.name})"
+        if hasattr(self, "share_url"):
+            path = f"'{self.share_url}'"
+        else:
+            path = self.path
+        share_repr = f"Share(name={self.name}, path={path})"
         share_overview = self.show()
         if share_overview is not None:
             return f"{share_repr}\n" + share_overview.__repr__()
