@@ -2,6 +2,12 @@
 
 This is a library for easy sharing of Python DataFrame objects. It's powered by DuckDB. 🦆
 
+## How to install
+
+```bash
+pip install pyshare-lib
+```
+
 ## Example usage
 
 ```python
