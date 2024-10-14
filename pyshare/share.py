@@ -151,17 +151,19 @@ class Share:
                 else:
                     con.sql(f"CREATE DATABASE IF NOT EXISTS {self.name}")
                     try:
-                        res = con.sql(f"""
+                        res = con.sql(
+                            f"""
                             CREATE SHARE IF NOT EXISTS {self.name}
                             FROM {self.name} (ACCESS ORGANIZATION , VISIBILITY DISCOVERABLE);
-                        """)
+                        """
+                        )
                         self.share_url = res.fetchone()[0]
                     except duckdb.CatalogException:
                         warn("Skipping creating share")
                         pass
         self._con = duckdb.connect(database=path)
         self._attrs = _ShareAttrs(con=self._con)
-    
+
     def __del__(self):
         self._con.close()
         if is_share(self.path):
@@ -279,7 +281,7 @@ class Share:
         if share_overview is not None:
             return f"{share_repr}\n" + share_overview.__repr__()
         return share_repr
-    
+
     @property
     def attrs(self):
         return self._attrs
