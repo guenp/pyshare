@@ -34,7 +34,7 @@ class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         self.name = kwargs.pop("name")
         self.callback = kwargs.pop("callback")
-        dict.__init__(self, *args, **kwargs)
+        dict.__init__(self, name=self.name, *args, **kwargs)
 
     def __setitem__(self, key, value):
         dict.__setitem__(self, key, value)
@@ -55,17 +55,20 @@ class _ShareAttrs:
         self.set(name=key, attrs=value)
 
     def __getitem__(self, key: str) -> dict[str, Any]:
-        return AttrDict(name=key, callback=self.set, **self.get(name=key))
+        return self.get(name=key)
 
     def set(self, name: str, attrs: dict[str, Any]):
-        self._con.sql(f"INSERT OR REPLACE INTO _pyshare.attrs VALUES ('{name}', '{json.dumps(attrs)}')")
+        attrs_to_set = attrs.copy()
+        if NAME_ATTR in attrs_to_set:
+            attrs_to_set.pop(NAME_ATTR)
+        self._con.sql(f"INSERT OR REPLACE INTO _pyshare.attrs VALUES ('{name}', '{json.dumps(attrs_to_set)}')")
 
     def get(self, name: str) -> dict[str, Any]:
         res = self._con.sql(f"SELECT values FROM _pyshare.attrs WHERE name = '{name}'").fetchone()
         if res is not None:
-            return json.loads(res[0])
-        return {}
-    
+            return AttrDict(name=name, callback=self.set, **json.loads(res[0]))
+        return AttrDict(name=name, callback=self.set)
+
     def show(self):
         res = self._con.sql("SELECT json_group_structure(values) FROM _pyshare.attrs").fetchone()
         if res is not None and res[0] is not None and res[0] != '"JSON"':
@@ -171,7 +174,6 @@ class Share:
         else:
             df = self._con.sql(f"""SELECT * FROM "{name}";""").df()
             df.attrs = self._attrs.get(name=name)
-            df.attrs[NAME_ATTR] = name
             return df
 
     def _where(self, **kwargs) -> Generator[DataFrame, Any, None] | None:
