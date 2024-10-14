@@ -125,7 +125,8 @@ class Share:
         self.set(data=data, name=name)
 
     def show(self):
-        res = self._con.sql("""
+        res = self._con.sql(
+            """
             select json_group_structure(values) from _pyshare.attrs
         """
         ).fetchone()
@@ -157,6 +158,7 @@ class Share:
 
     def __repr__(self) -> str:
         return f"Share(name={self.name})\n" + self.show().__repr__()
+
 
 def create_share(name: str, path: str | None = None) -> Share:
     path = path or get_path(name)
