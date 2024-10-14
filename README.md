@@ -34,10 +34,13 @@ df = pd.DataFrame({"tree_id": [1, 2, 3], "size": [2.4, 1.2, 0.8], "num_apples": 
 share["elstar"] = df
 ```
 
-To overwrite the attributes but not the table, run:
+To overwrite or update the attributes but not the table, run:
 
 ```python
+# overwrite
 share.attrs["elstar"] = {"parentage": ["Ingrid Marie", "Golden Delicious"]}
+# update
+share.attrs["elstar"].update({"parentage": ["Ingrid Marie", "Golden Delicious"]})
 ```
 
 You can easily find your dataframes by `name` or any of the attributes you specified:

@@ -30,6 +30,21 @@ def get_path(name: str):
     return DEFAULT_PYSHARE_PATH / "data" / f"{name}.db"
 
 
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        self.name = kwargs.pop("name")
+        self.callback = kwargs.pop("callback")
+        dict.__init__(self, *args, **kwargs)
+
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key, value)
+        self.callback(self.name, self)
+
+    def update(self, m, **kwargs):
+        dict.update(self, m, **kwargs)
+        self.callback(self.name, self)
+
+
 class _ShareAttrs:
     def __init__(self, con: duckdb.DuckDBPyConnection):
         self._con = con
@@ -40,7 +55,7 @@ class _ShareAttrs:
         self.set(name=key, attrs=value)
 
     def __getitem__(self, key: str) -> dict[str, Any]:
-        return self.get(name=key)
+        return AttrDict(name=key, callback=self.set, **self.get(name=key))
 
     def set(self, name: str, attrs: dict[str, Any]):
         self._con.sql(f"INSERT OR REPLACE INTO _pyshare.attrs VALUES ('{name}', '{json.dumps(attrs)}')")
