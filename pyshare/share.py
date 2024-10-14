@@ -36,10 +36,10 @@ class _ShareAttrs:
         self._con.sql("CREATE SCHEMA IF NOT EXISTS _pyshare")
         self._con.sql("CREATE TABLE IF NOT EXISTS _pyshare.attrs (name VARCHAR PRIMARY KEY, values JSON)")
 
-    def __setitem__(self, key: str, value: DataFrame):
+    def __setitem__(self, key: str, value: dict[str, Any]):
         self.set(name=key, attrs=value)
 
-    def __getitem__(self, key: str) -> DataFrame:
+    def __getitem__(self, key: str) -> dict[str, Any]:
         return self.get(name=key)
 
     def set(self, name: str, attrs: dict[str, Any]):
@@ -50,6 +50,64 @@ class _ShareAttrs:
         if res is not None:
             return json.loads(res[0])
         return {}
+    
+    def show(self):
+        res = self._con.sql("SELECT json_group_structure(values) FROM _pyshare.attrs").fetchone()
+        if res is not None and res[0] is not None and res[0] != '"JSON"':
+            json_structure = res[0]
+            query = f"""
+            WITH attrs_ AS (
+                SELECT
+                    name,
+                    json_transform(values, '{json_structure}') AS values
+                    FROM _pyshare.attrs
+            ),
+            tables AS (
+                SELECT
+                    table_name,
+                    column_count,
+                    estimated_size
+                    FROM duckdb_tables()
+                    WHERE schema_name = 'main'
+            )
+            SELECT
+                table_name AS name,
+                values.*
+            FROM tables
+            LEFT JOIN
+            attrs_ ON table_name = name
+            """
+        else:
+            # No attributes found
+            query = """
+            WITH tables AS (
+                SELECT
+                    table_name,
+                    column_count,
+                    estimated_size
+                    FROM duckdb_tables()
+                    WHERE schema_name = 'main'
+            )
+            SELECT
+                table_name AS name
+            FROM tables
+            """
+        return self._con.sql(query)
+
+    def df(self) -> DataFrame:
+        show = self.show()
+        if show is not None:
+            df = show.df()
+            df.attrs[NAME_ATTR] = self.name
+            return df
+        return DataFrame()
+
+    def __repr__(self) -> str:
+        share_repr = "_ShareAttrs()"
+        share_overview = self.show()
+        if share_overview is not None:
+            return f"{share_repr}\n" + share_overview.__repr__()
+        return share_repr
 
 
 class Share:
@@ -70,14 +128,21 @@ class Share:
     def __getitem__(self, key: str) -> DataFrame:
         return self.get(name=key)
 
-    def set(self, data: DataFrame, name: str):
-        self._con.sql(f"""CREATE OR REPLACE TABLE "{name}" AS (SELECT * FROM data)""")
+    def set(self, name: str, data: DataFrame):
+        if data:
+            self._con.sql(f"""CREATE OR REPLACE TABLE "{name}" AS (SELECT * FROM data)""")
         if data.attrs:
             attrs_to_set = data.attrs.copy()
             if NAME_ATTR in data.attrs:
                 warn(f"Ignoring 'name' attribute in attrs: DataFrame name is already set to {name}")
                 attrs_to_set.pop(NAME_ATTR)
             self._attrs.set(name=name, attrs=attrs_to_set)
+
+    def update(self, name: str, **kwargs):
+        attrs_to_set = {}
+        attrs_to_set.update(self._attrs.get(name=name))
+        attrs_to_set.update(kwargs)
+        self._attrs.set(name=name, attrs=attrs_to_set)
 
     def get_all(self, **kwargs) -> Generator[DataFrame, Any, None]:
         return self._where(**kwargs)
@@ -104,11 +169,6 @@ class Share:
                 for _res in res:
                     (name,) = _res
                     yield self.get(name)
-
-    def set_with_attrs(self, data: DataFrame, name: str, attrs: dict[str, Any] | None = None):
-        attrs = attrs or data.attrs
-        data.attrs = attrs
-        self.set(data=data, name=name)
 
     def show(self):
         res = self._con.sql("SELECT json_group_structure(values) FROM _pyshare.attrs").fetchone()
@@ -171,6 +231,10 @@ class Share:
         if share_overview is not None:
             return f"{share_repr}\n" + share_overview.__repr__()
         return share_repr
+    
+    @property
+    def attrs(self):
+        return self._attrs
 
 
 def create_share(name: str, path: str | None = None) -> Share:

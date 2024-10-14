@@ -22,6 +22,24 @@ df.attrs = {"flavor": "tart", "country": "Australia"}
 share["granny smith"] = df
 ```
 
+To inspect your share, run
+```
+share
+```
+
+You can update your dataframe like so, without updating the attributes:
+
+```python
+df = pd.DataFrame({"tree_id": [1, 2, 3], "size": [2.4, 1.2, 0.8], "num_apples": [234, 123, 40], "harvest": ["plentiful", "sparse", "baby"]})
+share["elstar"] = df
+```
+
+To overwrite the attributes but not the table, run:
+
+```python
+share.attrs["elstar"] = {"parentage": ["Ingrid Marie", "Golden Delicious"]}
+```
+
 You can easily find your dataframes by `name` or any of the attributes you specified:
 
 ```python
