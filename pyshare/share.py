@@ -34,7 +34,7 @@ class _ShareAttrs:
     def __init__(self, con: duckdb.DuckDBPyConnection):
         self._con = con
         self._con.sql("CREATE SCHEMA IF NOT EXISTS _pyshare")
-        self._con.sql("CREATE TABLE IF NOT EXISTS _pyshare.attrs (name VARCHAR, values JSON)")
+        self._con.sql("CREATE TABLE IF NOT EXISTS _pyshare.attrs (name VARCHAR PRIMARY KEY, values JSON)")
 
     def __setitem__(self, key: str, value: DataFrame):
         self.set(name=key, attrs=value)
@@ -43,12 +43,13 @@ class _ShareAttrs:
         return self.get(name=key)
 
     def set(self, name: str, attrs: dict[str, Any]):
-        self._con.sql(f"INSERT INTO _pyshare.attrs VALUES ('{name}', '{json.dumps(attrs)}')")
+        self._con.sql(f"INSERT OR REPLACE INTO _pyshare.attrs VALUES ('{name}', '{json.dumps(attrs)}')")
 
-    def get(self, name: str) -> DataFrame:
+    def get(self, name: str) -> dict[str, Any]:
         res = self._con.sql(f"SELECT values FROM _pyshare.attrs WHERE name = '{name}'").fetchone()
         if res is not None:
             return json.loads(res[0])
+        return {}
 
 
 class Share:
@@ -70,32 +71,39 @@ class Share:
         return self.get(name=key)
 
     def set(self, data: DataFrame, name: str):
-        self._con.sql(f"""CREATE TABLE "{name}" AS (SELECT * FROM data)""")
-        if data.attrs is not None:
-            if NAME_ATTR in data.attrs and data.attrs[NAME_ATTR] != name:
+        self._con.sql(f"""CREATE OR REPLACE TABLE "{name}" AS (SELECT * FROM data)""")
+        if data.attrs:
+            attrs_to_set = data.attrs.copy()
+            if NAME_ATTR in data.attrs:
                 warn(f"Ignoring 'name' attribute in attrs: DataFrame name is already set to {name}")
-            self._attrs.set(name=name, attrs=data.attrs)
+                attrs_to_set.pop(NAME_ATTR)
+            self._attrs.set(name=name, attrs=attrs_to_set)
 
     def get_all(self, **kwargs) -> Generator[DataFrame, Any, None]:
         return self._where(**kwargs)
 
     def get(self, name: str | None = None, **kwargs) -> DataFrame:
         if name is None:
-            return next(self._where(**kwargs))
+            gen = self._where(**kwargs)
+            try:
+                return next(gen)
+            except StopIteration:
+                return DataFrame()
         else:
             df = self._con.sql(f"""SELECT * FROM "{name}";""").df()
             df.attrs = self._attrs.get(name=name)
             df.attrs[NAME_ATTR] = name
             return df
 
-    def _where(self, **kwargs):
-        filters = [f"values->>'$.{key}' = '{value}'" for key, value in kwargs.items()]
-        filter_sql = " AND ".join(filters)
-        res = self._con.sql(f"""SELECT name FROM _pyshare.attrs WHERE ({filter_sql})""").fetchall()
-        if len(res) > 0:
-            for _res in res:
-                (name,) = _res
-                yield self.get(name)
+    def _where(self, **kwargs) -> Generator[DataFrame, Any, None] | None:
+        if kwargs:
+            filters = [f"values->>'$.{key}' = '{value}'" for key, value in kwargs.items()]
+            filter_sql = " AND ".join(filters)
+            res = self._con.sql(f"""SELECT name FROM _pyshare.attrs WHERE ({filter_sql})""").fetchall()
+            if len(res) > 0:
+                for _res in res:
+                    (name,) = _res
+                    yield self.get(name)
 
     def set_with_attrs(self, data: DataFrame, name: str, attrs: dict[str, Any] | None = None):
         attrs = attrs or data.attrs
@@ -104,7 +112,7 @@ class Share:
 
     def show(self):
         res = self._con.sql("SELECT json_group_structure(values) FROM _pyshare.attrs").fetchone()
-        if res is not None and res[0] is not None:
+        if res is not None and res[0] is not None and res[0] != '"JSON"':
             json_structure = res[0]
             query = f"""
             WITH attrs_ AS (
@@ -121,10 +129,33 @@ class Share:
                     FROM duckdb_tables()
                     WHERE schema_name = 'main'
             )
-            SELECT table_name AS name, column_count, estimated_size, values.*
-            FROM tables JOIN attrs_ ON table_name = name
+            SELECT
+                table_name AS name,
+                column_count,
+                estimated_size,
+                values.*
+            FROM tables
+            LEFT JOIN
+            attrs_ ON table_name = name
             """
-            return self._con.sql(query)
+        else:
+            # No attributes found
+            query = """
+            WITH tables AS (
+                SELECT
+                    table_name,
+                    column_count,
+                    estimated_size
+                    FROM duckdb_tables()
+                    WHERE schema_name = 'main'
+            )
+            SELECT
+                table_name AS name,
+                column_count,
+                estimated_size
+            FROM tables
+            """
+        return self._con.sql(query)
 
     def df(self) -> DataFrame:
         show = self.show()

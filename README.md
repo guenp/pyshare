@@ -10,14 +10,14 @@ import pandas as pd
 
 share = create_share("apples")
 
-# 1. load a csv to a DataFrame
+# 1. create a unique dataframe
 # 2. add attributes to make it easier to find the dataframe later
 # 3. add the dataframe to your share
-df = pd.read_csv("elstar.csv")
+df = pd.DataFrame({"tree_id": [1, 2], "size": [2.4, 1.2], "num_apples": [234, 123], "harvest": ["plentiful", "sparse"]})
 df.attrs = {"flavor": "sweet/sharp", "country": "The Netherlands"}
 share["elstar"] = df
 
-df = pd.read_csv("granny_smith.csv")
+df = pd.DataFrame({"tree_id": [3, 4], "size": [3.1, 2.2], "treatment": ["irrigated", "non-irrigated"], "bud_percentage": [93.1, 87.3]})
 df.attrs = {"flavor": "tart", "country": "Australia"}
 share["granny smith"] = df
 ```
