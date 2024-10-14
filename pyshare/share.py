@@ -14,6 +14,12 @@ DEFAULT_PYSHARE_PATH = Path(os.path.expanduser("~/.pyshare"))
 MEMORY = ":memory:"
 
 
+def get_path(name: str):
+    if "MOTHERDUCK_TOKEN" in os.environ:
+        return f"md:{name}"
+    return DEFAULT_PYSHARE_PATH / "data" / f"{name}.db"
+
+
 class _ShareAttrs:
     def __init__(self, con: duckdb.DuckDBPyConnection):
         self._con = con
@@ -60,7 +66,7 @@ class _ShareAttrs:
 class Share:
     def __init__(self, name: str, path: str):
         self.name = name
-        self.path = path or DEFAULT_PYSHARE_PATH / "data" / f"{name}.db"
+        self.path = path or get_path(name)
         if path != MEMORY:
             self.path.parent.mkdir(parents=True, exist_ok=True)
         self._con = duckdb.connect(database=path)
@@ -103,5 +109,5 @@ class Share:
 
 
 def create_share(name: str, path: str | None = None) -> Share:
-    path = path or DEFAULT_PYSHARE_PATH / "data" / f"{name}.db"
+    path = path or get_path(name)
     return Share(name=name, path=path)
