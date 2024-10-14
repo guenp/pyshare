@@ -6,12 +6,14 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+from warnings import warn
 
 import duckdb
 from pandas import DataFrame
 
 DEFAULT_PYSHARE_PATH = Path(os.path.expanduser("~/.pyshare"))
 MEMORY = ":memory:"
+NAME_ATTR = "name"
 
 
 def get_path(name: str):
@@ -81,6 +83,8 @@ class Share:
     def set(self, data: DataFrame, name: str | None):
         self._con.sql(f"""CREATE TABLE "{name}" AS (SELECT * FROM data)""")
         if data.attrs is not None:
+            if NAME_ATTR in data.attrs and data.attrs[NAME_ATTR] != self.name:
+                warn(f"Ignoring 'name' attribute in attrs: DataFrame name is set to {self.name}")
             self._attrs.set(name=name, attrs=data.attrs)
 
     def get(self, name: str | None = None, **kwargs) -> DataFrame:
@@ -89,6 +93,7 @@ class Share:
         else:
             df = self._con.sql(f"""SELECT * FROM "{name}";""").df()
             df.attrs = self._attrs.get(name=name)
+            df.attrs[NAME_ATTR] = self.name
             return df
 
     def _where(self, **kwargs):
@@ -104,7 +109,7 @@ class Share:
         data.attrs = attrs
         self.set(data=data, name=name)
 
-    def df(self) -> DataFrame:
+    def show(self):
         res = self._con.sql("""
             select json_group_structure(values) from _pyshare.attrs
         """
@@ -128,8 +133,15 @@ class Share:
             select table_name as name, column_count, estimated_size, values.*
             from tables join attrs_ on table_name = name
             """
-            return self._con.sql(query).df()
+            return self._con.sql(query)
 
+    def df(self) -> DataFrame:
+        df = self.show().df()
+        df.attrs[NAME_ATTR] = self.name
+        return df
+
+    def __repr__(self) -> str:
+        return f"Share(name={self.name})\n" + self.show().__repr__()
 
 def create_share(name: str, path: str | None = None) -> Share:
     path = path or get_path(name)
