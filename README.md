@@ -41,7 +41,15 @@ Share(name=apples)
 └──────────────┴──────────────┴────────────────┴─────────────┴─────────────────┘
 ```
 
-To get a dataframe version of the above, run
+## Configuration
+
+Each share creates a DuckDB database, either on your local machine or on MotherDuck.
+By default, your shares are saved under `~/.pyshare/data`. To override, set the environment variable `PYSHARE_PATH`.
+To use MotherDuck, export your MotherDuck [token](https://app.motherduck.com/token-request?appName=pyshare) to an environment variable `MOTHERDUCK_TOKEN`.
+
+## Fetching and updating data
+
+To get a dataframe version of your share, run
 ```
 share.df()
 ```
