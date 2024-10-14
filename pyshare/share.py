@@ -80,11 +80,11 @@ class Share:
     def __getitem__(self, key: str) -> DataFrame:
         return self.get(name=key)
 
-    def set(self, data: DataFrame, name: str | None):
+    def set(self, data: DataFrame, name: str):
         self._con.sql(f"""CREATE TABLE "{name}" AS (SELECT * FROM data)""")
         if data.attrs is not None:
-            if NAME_ATTR in data.attrs and data.attrs[NAME_ATTR] != self.name:
-                warn(f"Ignoring 'name' attribute in attrs: DataFrame name is set to {self.name}")
+            if NAME_ATTR in data.attrs and data.attrs[NAME_ATTR] != name:
+                warn(f"Ignoring 'name' attribute in attrs: DataFrame name is set to {name}")
             self._attrs.set(name=name, attrs=data.attrs)
 
     def get(self, name: str | None = None, **kwargs) -> DataFrame:
@@ -93,7 +93,7 @@ class Share:
         else:
             df = self._con.sql(f"""SELECT * FROM "{name}";""").df()
             df.attrs = self._attrs.get(name=name)
-            df.attrs[NAME_ATTR] = self.name
+            df.attrs[NAME_ATTR] = name
             return df
 
     def _where(self, **kwargs):
