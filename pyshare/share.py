@@ -4,8 +4,9 @@ PyShare main module
 
 import json
 import os
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 from warnings import warn
 
 import duckdb
@@ -14,10 +15,17 @@ from pandas import DataFrame
 DEFAULT_PYSHARE_PATH = Path(os.path.expanduser("~/.pyshare"))
 MEMORY = ":memory:"
 NAME_ATTR = "name"
+MD = "md:"
+
+
+def is_motherduck(path: str | Path | None = None):
+    if path is None:
+        return "MOTHERDUCK_TOKEN" in os.environ
+    return MD in str(path)
 
 
 def get_path(name: str):
-    if "MOTHERDUCK_TOKEN" in os.environ:
+    if is_motherduck():
         return f"md:{name}"
     return DEFAULT_PYSHARE_PATH / "data" / f"{name}.db"
 
@@ -69,8 +77,11 @@ class Share:
     def __init__(self, name: str, path: str):
         self.name = name
         self.path = path or get_path(name)
-        if path != MEMORY:
+        if path != MEMORY and not is_motherduck(path):
             self.path.parent.mkdir(parents=True, exist_ok=True)
+        elif is_motherduck(path):
+            with duckdb.connect(MD) as con:
+                con.sql(f"CREATE DATABASE IF NOT EXISTS {self.name}")
         self._con = duckdb.connect(database=path)
         self._attrs = _ShareAttrs(con=self._con)
 
