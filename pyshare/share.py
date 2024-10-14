@@ -5,7 +5,7 @@ PyShare main module
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 from warnings import warn
 
 import duckdb
@@ -87,9 +87,12 @@ class Share:
                 warn(f"Ignoring 'name' attribute in attrs: DataFrame name is set to {name}")
             self._attrs.set(name=name, attrs=data.attrs)
 
+    def get_all(self, **kwargs) -> Generator[DataFrame, Any, None]:
+        return self._where(**kwargs)
+
     def get(self, name: str | None = None, **kwargs) -> DataFrame:
         if name is None:
-            return self._where(**kwargs)
+            return next(self._where(**kwargs))
         else:
             df = self._con.sql(f"""SELECT * FROM "{name}";""").df()
             df.attrs = self._attrs.get(name=name)
@@ -99,10 +102,11 @@ class Share:
     def _where(self, **kwargs):
         filters = [f"values->>'$.{key}' = '{value}'" for key, value in kwargs.items()]
         filter_sql = " AND ".join(filters)
-        res = self._con.sql(f"""SELECT name FROM _pyshare.attrs WHERE ({filter_sql})""").fetchone()
-        if res is not None:
-            name = res[0]
-            return self.get(name)
+        res = self._con.sql(f"""SELECT name FROM _pyshare.attrs WHERE ({filter_sql})""").fetchall()
+        if len(res) > 0:
+            for _res in res:
+                (name,) = _res
+                yield self.get(name)
 
     def set_with_attrs(self, data: DataFrame, name: str, attrs: dict[str, Any] | None = None):
         attrs = attrs or data.attrs
