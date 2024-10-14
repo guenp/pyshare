@@ -48,8 +48,11 @@ class AttrDict(dict):
 class _ShareAttrs:
     def __init__(self, con: duckdb.DuckDBPyConnection):
         self._con = con
-        self._con.sql("CREATE SCHEMA IF NOT EXISTS _pyshare")
-        self._con.sql("CREATE TABLE IF NOT EXISTS _pyshare.attrs (name VARCHAR PRIMARY KEY, values JSON)")
+        try:
+            self._con.sql("CREATE SCHEMA IF NOT EXISTS _pyshare")
+            self._con.sql("CREATE TABLE IF NOT EXISTS _pyshare.attrs (name VARCHAR PRIMARY KEY, values JSON)")
+        except duckdb.InvalidInputException:
+            warn("Connecting in read-only mode")
 
     def __setitem__(self, key: str, value: dict[str, Any]):
         self.set(name=key, attrs=value)
@@ -137,6 +140,14 @@ class Share:
         elif is_motherduck(path):
             with duckdb.connect(MD) as con:
                 con.sql(f"CREATE DATABASE IF NOT EXISTS {self.name}")
+                try:
+                    con.sql(f"""
+                        CREATE SHARE IF NOT EXISTS {self.name}
+                        FROM {self.name} (ACCESS ORGANIZATION , VISIBILITY DISCOVERABLE);
+                    """)
+                except duckdb.CatalogException:
+                    warn("Skipping creating share")
+                    pass
         self._con = duckdb.connect(database=path)
         self._attrs = _ShareAttrs(con=self._con)
 
