@@ -12,6 +12,7 @@ from warnings import warn
 import duckdb
 from pandas import DataFrame
 
+PYSHARE_PATH = "PYSHARE_PATH"
 DEFAULT_PYSHARE_PATH = Path(os.path.expanduser("~/.pyshare"))
 MEMORY = ":memory:"
 NAME_ATTR = "name"
@@ -25,8 +26,10 @@ def is_motherduck(path: str | Path | None = None):
 
 
 def get_path(name: str):
+    if PYSHARE_PATH in os.environ:
+        return Path(os.path.expanduser(os.environ[PYSHARE_PATH])) / f"{name}.db"
     if is_motherduck():
-        return f"md:{name}"
+        return f"{MD}{name}"
     return DEFAULT_PYSHARE_PATH / "data" / f"{name}.db"
 
 
