@@ -1,0 +1,36 @@
+[project]
+name = "pyshare-lib"
+version = "0.0.0"
+authors = [
+  { name="Guen Prawiroatmodjo", email="hi@guen.pw" },
+]
+description = "PyShare - A Python Sharing library for DataFrames"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/guenp/pyshare"
+Issues = "https://github.com/guenp/pyshare/issues"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+select = ["E", "F", "I", "UP"]
+ignore = ["D203"]
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --cov"
+testpaths = ["tests"]
+pythonpath = ['.']
+
+[tool.coverage.report]
+show_missing = true
