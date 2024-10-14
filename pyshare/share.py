@@ -105,7 +105,30 @@ class Share:
         self.set(data=data, name=name)
 
     def df(self) -> DataFrame:
-        return self._attrs.df()
+        res = self._con.sql("""
+            select json_group_structure(values) from _pyshare.attrs
+        """
+        ).fetchone()
+        if res is not None:
+            json_structure = res[0]
+            query = f"""
+            with attrs_ as (
+                select
+                    name,
+                    json_transform(values, '{json_structure}') as values
+                    from _pyshare.attrs
+            ),
+            tables as (
+                select
+                    table_name,
+                    column_count,
+                    estimated_size from duckdb_tables()
+                    where schema_name = 'main'
+            )
+            select table_name as name, column_count, estimated_size, values.*
+            from tables join attrs_ on table_name = name
+            """
+            return self._con.sql(query).df()
 
 
 def create_share(name: str, path: str | None = None) -> Share:
