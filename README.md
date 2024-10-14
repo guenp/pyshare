@@ -1,6 +1,6 @@
 # PyShare: A Python Sharing library for DataFrames
 
-This is a library for sharing Python DataFrame objects with your fellow Pythonistas.
+This is a library for easy sharing of Python DataFrame objects. It's powered by DuckDB. 🦆
 
 ## Example usage
 
@@ -37,11 +37,7 @@ df = share.get(country="Australia")
 share["elstar"].attrs
 
 # get a table of all attributes
-share.attrs
+share.df()
 ```
 
-# TODO: config
-```python
-from pyshare import config
-config["default_path"] = "/my/shared/drive/data"
-```
+Happy sharing!

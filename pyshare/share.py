@@ -62,7 +62,7 @@ class Share:
         self.name = name
         self.path = path or DEFAULT_PYSHARE_PATH / "data" / f"{name}.db"
         if path != MEMORY:
-            self.path.mkdir(parents=True, exist_ok=True)
+            self.path.parent.mkdir(parents=True, exist_ok=True)
         self._con = duckdb.connect(database=path)
         self._attrs = _ShareAttrs(con=self._con)
 
