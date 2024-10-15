@@ -19,6 +19,8 @@ NAME_ATTR = "name"
 MD = "md:"
 ORGANIZATION = "ORGANIZATION"
 UNRESTRICTED = "UNRESTRICTED"
+AUTOMATIC = "AUTOMATIC"
+MANUAL = "MANUAL"
 
 
 def is_motherduck(path: str | Path | None = None):
@@ -141,10 +143,11 @@ class _ShareAttrs:
 
 
 class Share:
-    def __init__(self, name: str, path: str | None = None, public: bool = False):
+    def __init__(self, name: str, path: str | None = None, public: bool = False, update: bool = True):
         self.name = name
         self.path = path or get_path(name)
         self.access = UNRESTRICTED if public is True else ORGANIZATION
+        self.update = AUTOMATIC if update is True else MANUAL
         if path != MEMORY and not is_motherduck(self.path):
             self.path.parent.mkdir(parents=True, exist_ok=True)
         elif is_motherduck(self.path):
@@ -157,7 +160,7 @@ class Share:
                         res = con.sql(
                             f"""
                             CREATE SHARE IF NOT EXISTS {self.name}
-                            FROM {self.name} (ACCESS {self.access} , VISIBILITY DISCOVERABLE);
+                            FROM {self.name} (ACCESS {self.access} , VISIBILITY DISCOVERABLE , UPDATE {self.update});
                         """
                         )
                         self.share_url = res.fetchone()[0]
