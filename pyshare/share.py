@@ -150,10 +150,8 @@ class Share:
     def __init__(self, name: str, path: str | None = None, public: bool = False, auto_update: bool = True):
         self.name = name
         self.path = path or get_path(name)
-        self.public = public
-        self.auto_update = auto_update
-        self.access = UNRESTRICTED if public is True else ORGANIZATION
-        self.update = AUTOMATIC if auto_update is True else MANUAL
+        self._access = UNRESTRICTED if public is True else ORGANIZATION
+        self._update = AUTOMATIC if auto_update is True else MANUAL
         if path != MEMORY and not is_motherduck(self.path):
             self.path.parent.mkdir(parents=True, exist_ok=True)
         elif is_motherduck(self.path):
@@ -166,7 +164,7 @@ class Share:
                         res = con.sql(
                             f"""
                             CREATE SHARE IF NOT EXISTS {self.name}
-                            FROM {self.name} (ACCESS {self.access} , VISIBILITY DISCOVERABLE , UPDATE {self.update});
+                            FROM {self.name} (ACCESS {self._access} , VISIBILITY DISCOVERABLE , UPDATE {self._update});
                         """
                         )
                         self.share_url = res.fetchone()[0]
@@ -175,6 +173,12 @@ class Share:
                         pass
         self._con = duckdb.connect(database=self.path)
         self._attrs = _ShareAttrs(con=self._con, read_only=is_share(path))
+
+    def update(self):
+        self._con.sql(f"UPDATE SHARE {self.name}")
+
+    def sql(self, query: str, *, alias: str = "", params: object = None):
+        return self._con.sql(query=query, alias=alias, params=params)
 
     def __del__(self):
         self._con.close()
@@ -196,12 +200,6 @@ class Share:
                 warn(f"Ignoring 'name' attribute in attrs: DataFrame name is already set to {name}")
                 attrs_to_set.pop(NAME_ATTR)
             self._attrs.set(name=name, attrs=attrs_to_set)
-
-    def update(self, name: str, **kwargs):
-        attrs_to_set = {}
-        attrs_to_set.update(self._attrs.get(name=name))
-        attrs_to_set.update(kwargs)
-        self._attrs.set(name=name, attrs=attrs_to_set)
 
     def get_all(self, **kwargs) -> Generator[DataFrame, Any, None]:
         return self._where(**kwargs)
