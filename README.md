@@ -33,7 +33,7 @@ share
 Output:
 
 ```bash
-Share(name="apples", path="md:_share/apples/97b34401-cf9f-477f-b1d3-3c152912a958")
+Share(name="apples", path="md:_share/apples/0ba5fc11-20d4-4f4d-81dc-2bda2f58b723")
 ┌──────────────┬──────────────┬────────────────┬─────────────┬─────────────────┐
 │     name     │ column_count │ estimated_size │   flavor    │     country     │
 │   varchar    │    int64     │     int64      │   varchar   │     varchar     │
