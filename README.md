@@ -11,13 +11,10 @@ pip install pyshare-lib
 ## Example usage
 
 ```python
+import pandas as pd
 from pyshare import Share
 
-# create a share
 share = Share("apples", public=True)
-
-# save your data
-import pandas as pd
 
 df = pd.DataFrame({"tree_id": ["alice", "bob"], "bud_percentage": [42.1, 39.3]})
 df.attrs = {"flavor": "sweet/sharp", "country": "The Netherlands"}
