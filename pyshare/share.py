@@ -143,11 +143,11 @@ class _ShareAttrs:
 
 
 class Share:
-    def __init__(self, name: str, path: str | None = None, public: bool = False, update: bool = True):
+    def __init__(self, name: str, path: str | None = None, public: bool = False, auto_update: bool = True):
         self.name = name
         self.path = path or get_path(name)
         self.access = UNRESTRICTED if public is True else ORGANIZATION
-        self.update = AUTOMATIC if update is True else MANUAL
+        self.update = AUTOMATIC if auto_update is True else MANUAL
         if path != MEMORY and not is_motherduck(self.path):
             self.path.parent.mkdir(parents=True, exist_ok=True)
         elif is_motherduck(self.path):
