@@ -17,6 +17,8 @@ DEFAULT_PYSHARE_PATH = Path(os.path.expanduser("~/.pyshare"))
 MEMORY = ":memory:"
 NAME_ATTR = "name"
 MD = "md:"
+ORGANIZATION = "ORGANIZATION"
+UNRESTRICTED = "UNRESTRICTED"
 
 
 def is_motherduck(path: str | Path | None = None):
@@ -139,29 +141,30 @@ class _ShareAttrs:
 
 
 class Share:
-    def __init__(self, name: str, path: str):
+    def __init__(self, name: str, path: str | None = None, public: bool = False):
         self.name = name
         self.path = path or get_path(name)
-        if path != MEMORY and not is_motherduck(path):
+        self.access = UNRESTRICTED if public is True else ORGANIZATION
+        if path != MEMORY and not is_motherduck(self.path):
             self.path.parent.mkdir(parents=True, exist_ok=True)
-        elif is_motherduck(path):
+        elif is_motherduck(self.path):
             with duckdb.connect(MD) as con:
-                if is_share(path):
-                    con.sql(f"ATTACH '{path}'")
+                if is_share(self.path):
+                    con.sql(f"ATTACH '{self.path}'")
                 else:
                     con.sql(f"CREATE DATABASE IF NOT EXISTS {self.name}")
                     try:
                         res = con.sql(
                             f"""
                             CREATE SHARE IF NOT EXISTS {self.name}
-                            FROM {self.name} (ACCESS ORGANIZATION , VISIBILITY DISCOVERABLE);
+                            FROM {self.name} (ACCESS {self.access} , VISIBILITY DISCOVERABLE);
                         """
                         )
                         self.share_url = res.fetchone()[0]
                     except duckdb.CatalogException:
                         warn("Skipping creating share")
                         pass
-        self._con = duckdb.connect(database=path)
+        self._con = duckdb.connect(database=self.path)
         self._attrs = _ShareAttrs(con=self._con)
 
     def __del__(self):

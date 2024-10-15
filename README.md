@@ -27,15 +27,13 @@ df = pd.DataFrame({"tree_id": ["charlie", "dora"], "bud_percentage": [93.1, 87.3
 df.attrs = {"flavor": "tart", "country": "Australia"}
 share["granny smith"] = df
 
-# load your data
-df = share["elstar"]
-df = share.get(flavor="sweet/sharp")
-
 share
 ```
 
+Output:
+
 ```bash
-Share(name=apples)
+Share(name=apples, path='md:_share/apples/97b34401-cf9f-477f-b1d3-3c152912a958')
 ┌──────────────┬──────────────┬────────────────┬─────────────┬─────────────────┐
 │     name     │ column_count │ estimated_size │   flavor    │     country     │
 │   varchar    │    int64     │     int64      │   varchar   │     varchar     │
@@ -43,6 +41,21 @@ Share(name=apples)
 │ elstar       │            2 │              2 │ sweet/sharp │ The Netherlands │
 │ granny smith │            2 │              2 │ tart        │ Australia       │
 └──────────────┴──────────────┴────────────────┴─────────────┴─────────────────┘
+```
+
+```python
+from pyshare import Share
+
+share = Share(name="apples", path="md:_share/apples/97b34401-cf9f-477f-b1d3-3c152912a958")
+df = share.get(flavor="sweet/sharp")
+
+df.attrs
+```
+
+Output:
+
+```bash
+{'name': 'elstar', 'flavor': 'sweet/sharp', 'country': 'The Netherlands'}
 ```
 
 
