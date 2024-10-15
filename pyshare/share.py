@@ -276,10 +276,10 @@ class Share:
 
     def __repr__(self) -> str:
         if hasattr(self, "share_url"):
-            path = f"'{self.share_url}'"
+            path = self.share_url
         else:
             path = self.path
-        share_repr = f"Share(name={self.name}, path={path})"
+        share_repr = f"Share(name='{self.name}', path='{path}')"
         share_overview = self.show()
         if share_overview is not None:
             return f"{share_repr}\n" + share_overview.__repr__()
