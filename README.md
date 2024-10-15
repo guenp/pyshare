@@ -30,7 +30,7 @@ share
 Output:
 
 ```bash
-Share(name="apples", path="md:_share/apples/2fb46588-de57-4a24-9e85-d8cf7ef78be1", public=True, auto_update=True)
+Share(name="apples", path="md:_share/apples/2fb46588-de57-4a24-9e85-d8cf7ef78be1")
 ┌──────────────┬──────────────┬────────────────┬─────────────┬─────────────────┐
 │     name     │ column_count │ estimated_size │   flavor    │     country     │
 │   varchar    │    int64     │     int64      │   varchar   │     varchar     │
@@ -43,7 +43,7 @@ Share(name="apples", path="md:_share/apples/2fb46588-de57-4a24-9e85-d8cf7ef78be1
 ```python
 from pyshare import Share
 
-share = Share(name="apples", path="md:_share/apples/2fb46588-de57-4a24-9e85-d8cf7ef78be1", public=True, auto_update=True)
+share = Share(name="apples", path="md:_share/apples/2fb46588-de57-4a24-9e85-d8cf7ef78be1")
 df = share.get(flavor="sweet/sharp")
 
 df.attrs
@@ -52,6 +52,7 @@ df.attrs
 Output:
 
 ```bash
+Connecting in read-only mode
 {'name': 'elstar', 'flavor': 'sweet/sharp', 'country': 'The Netherlands'}
 ```
 

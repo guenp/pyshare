@@ -11,6 +11,7 @@ from warnings import warn
 
 import duckdb
 from pandas import DataFrame
+import rich
 
 PYSHARE_PATH = "PYSHARE_PATH"
 DEFAULT_PYSHARE_PATH = Path(os.path.expanduser("~/.pyshare"))
@@ -57,13 +58,14 @@ class AttrDict(dict):
 
 
 class _ShareAttrs:
-    def __init__(self, con: duckdb.DuckDBPyConnection):
+    def __init__(self, con: duckdb.DuckDBPyConnection, read_only: bool = False):
         self._con = con
-        try:
+        self.read_only = read_only
+        if not read_only:
             self._con.sql("CREATE SCHEMA IF NOT EXISTS _pyshare")
             self._con.sql("CREATE TABLE IF NOT EXISTS _pyshare.attrs (name VARCHAR PRIMARY KEY, values JSON)")
-        except duckdb.InvalidInputException:
-            warn("Connecting in read-only mode")
+        else:
+            rich.print("Connecting in [bold magenta]read-only mode[/bold magenta]")
 
     def __setitem__(self, key: str, value: dict[str, Any]):
         self.set(name=key, attrs=value)
@@ -135,7 +137,7 @@ class _ShareAttrs:
         return DataFrame()
 
     def __repr__(self) -> str:
-        share_repr = "_ShareAttrs()"
+        share_repr = f"_ShareAttrs(read_only={self.read_only})"
         share_overview = self.show()
         if share_overview is not None:
             return f"{share_repr}\n" + share_overview.__repr__()
@@ -170,7 +172,7 @@ class Share:
                         warn("Skipping creating share")
                         pass
         self._con = duckdb.connect(database=self.path)
-        self._attrs = _ShareAttrs(con=self._con)
+        self._attrs = _ShareAttrs(con=self._con, read_only=is_share(path))
 
     def __del__(self):
         self._con.close()
@@ -284,9 +286,9 @@ class Share:
             path = self.share_url
         else:
             path = self.path
-        share_repr = (
-            f"""Share(name="{self.name}", path="{path}", public={self.public}, auto_update={self.auto_update})"""
-        )
+        share_repr = f"""Share(name="{self.name}", path="{path}")"""
+        if is_share(self.path):
+            share_repr += " (read-only)"
         share_overview = self.show()
         if share_overview is not None:
             return f"{share_repr}\n" + share_overview.__repr__()
