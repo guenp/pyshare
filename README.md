@@ -14,7 +14,7 @@ pip install pyshare-lib
 from pyshare import Share
 
 # create a share
-share = Share("apples")
+share = Share("apples", public=True)
 
 # save your data
 import pandas as pd
@@ -33,7 +33,7 @@ share
 Output:
 
 ```bash
-Share(name="apples", path="md:_share/apples/0ba5fc11-20d4-4f4d-81dc-2bda2f58b723")
+Share(name="apples", path="md:_share/apples/2fb46588-de57-4a24-9e85-d8cf7ef78be1", public=True, auto_update=True)
 ┌──────────────┬──────────────┬────────────────┬─────────────┬─────────────────┐
 │     name     │ column_count │ estimated_size │   flavor    │     country     │
 │   varchar    │    int64     │     int64      │   varchar   │     varchar     │
@@ -46,7 +46,7 @@ Share(name="apples", path="md:_share/apples/0ba5fc11-20d4-4f4d-81dc-2bda2f58b723
 ```python
 from pyshare import Share
 
-share = Share(name="apples", path="md:_share/apples/97b34401-cf9f-477f-b1d3-3c152912a958")
+share = Share(name="apples", path="md:_share/apples/2fb46588-de57-4a24-9e85-d8cf7ef78be1", public=True, auto_update=True)
 df = share.get(flavor="sweet/sharp")
 
 df.attrs

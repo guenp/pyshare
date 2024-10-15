@@ -146,6 +146,8 @@ class Share:
     def __init__(self, name: str, path: str | None = None, public: bool = False, auto_update: bool = True):
         self.name = name
         self.path = path or get_path(name)
+        self.public = public
+        self.auto_update = auto_update
         self.access = UNRESTRICTED if public is True else ORGANIZATION
         self.update = AUTOMATIC if auto_update is True else MANUAL
         if path != MEMORY and not is_motherduck(self.path):
@@ -282,7 +284,9 @@ class Share:
             path = self.share_url
         else:
             path = self.path
-        share_repr = f"""Share(name="{self.name}", path="{path}")"""
+        share_repr = (
+            f"""Share(name="{self.name}", path="{path}", public={self.public}, auto_update={self.auto_update})"""
+        )
         share_overview = self.show()
         if share_overview is not None:
             return f"{share_repr}\n" + share_overview.__repr__()
