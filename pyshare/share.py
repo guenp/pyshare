@@ -30,8 +30,10 @@ def is_motherduck(path: str | Path | None = None):
     return MD in str(path)
 
 
-def is_share(path: str):
-    return "md:_share" in path
+def is_share(path: str | None):
+    if path is not None:
+        return "md:_share" in path
+    return False
 
 
 def get_path(name: str):
